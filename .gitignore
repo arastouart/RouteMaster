@@ -25,3 +25,6 @@ Package.resolved
 
 # Misc
 *.log
+
+# Local Claude Code session settings (not part of the distributed project)
+.claude/

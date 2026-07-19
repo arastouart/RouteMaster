@@ -1,0 +1,15 @@
+# RouteMaster is built and run on macOS. Force LF everywhere so shell scripts,
+# Swift sources, and plists are never corrupted by Windows CRLF conversion.
+* text=auto eol=lf
+
+*.sh   text eol=lf
+*.swift text eol=lf
+*.yml  text eol=lf
+*.plist text eol=lf
+*.entitlements text eol=lf
+*.md   text eol=lf
+
+# Binaries (none yet, but be explicit)
+*.png  binary
+*.icns binary
+*.p12  binary
