@@ -1,0 +1,134 @@
+name: RouteMaster
+
+# ---------------------------------------------------------------------------
+# RouteMaster — macOS split-routing + Geo-Lock utility
+#
+# Two targets in ONE project:
+#   * RouteMaster        (SwiftUI app,  bundle id: com.routemaster.app)
+#   * RouteMasterHelper  (privileged daemon, bundle id: com.routemaster.helper)
+#
+# The helper executable + its launchd plist are embedded INTO the app bundle at
+# the exact layout SMAppService.daemon(plistName:) requires:
+#   RouteMaster.app/Contents/MacOS/RouteMasterHelper
+#   RouteMaster.app/Contents/Library/LaunchDaemons/com.routemaster.helper.plist
+#
+# Signing:
+#   * LOCAL_DEV  -> DEV_TEAM env empty  -> self-signed "RouteMaster Local Dev" identity
+#   * Developer ID -> DEV_TEAM env set to <TEAM_ID> -> real Developer ID identity
+# The maintainer replaces <TEAM_ID> / <BUNDLE_PREFIX> for a notarized release.
+# ---------------------------------------------------------------------------
+
+options:
+  bundleIdPrefix: com.routemaster
+  deploymentTarget:
+    macOS: "13.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    # Universal binary
+    ARCHS: "arm64 x86_64"
+    ONLY_ACTIVE_ARCH: NO
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+
+    # Team is env-driven. Empty in LOCAL_DEV; set to <TEAM_ID> for Developer ID builds.
+    DEVELOPMENT_TEAM: "$(DEV_TEAM)"
+
+    # Hardened Runtime on from day one so a later notarization step needs no code changes.
+    ENABLE_HARDENED_RUNTIME: YES
+    OTHER_CODE_SIGN_FLAGS: "--timestamp"
+
+    # Swift
+    SWIFT_VERSION: "5.9"
+    CODE_SIGN_STYLE: Manual
+
+    # LOCAL_DEV signs against the self-signed identity by name. build.sh overrides
+    # CODE_SIGN_IDENTITY on the xcodebuild command line for Developer ID builds.
+    CODE_SIGN_IDENTITY: "RouteMaster Local Dev"
+
+    # Which XPC code-signing requirement the runtime pins. Overridden to RELEASE by
+    # build.sh when DEV_TEAM is set (see RM_SIGNING_MODE in Info.plist / Constants).
+    SWIFT_ACTIVE_COMPILATION_CONDITIONS: "LOCAL_DEV"
+
+targets:
+
+  # -------------------------------------------------------------------------
+  # The privileged daemon (command-line tool). Runs as root under launchd.
+  # -------------------------------------------------------------------------
+  RouteMasterHelper:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Sources/Helper
+      - path: Sources/Shared
+    settings:
+      base:
+        PRODUCT_NAME: RouteMasterHelper
+        PRODUCT_BUNDLE_IDENTIFIER: com.routemaster.helper
+        CODE_SIGN_ENTITLEMENTS: Resources/Helper/Helper.entitlements
+        # Pin the daemon's designated requirement info so `codesign` embeds an
+        # identifier that the app's XPC requirement string can match.
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+        INFOPLIST_FILE: Resources/Helper/Helper-Info.plist
+        SKIP_INSTALL: YES
+
+  # -------------------------------------------------------------------------
+  # The SwiftUI app. Embeds the helper + plist at the SMAppService layout.
+  # -------------------------------------------------------------------------
+  RouteMaster:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/App
+      - path: Sources/Shared
+    dependencies:
+      # Build the helper first; we copy it into place ourselves (see postCompile),
+      # so mark it as a non-embedding dependency to avoid Xcode's default
+      # Frameworks/ placement.
+      - target: RouteMasterHelper
+        embed: false
+        link: false
+    settings:
+      base:
+        PRODUCT_NAME: RouteMaster
+        PRODUCT_BUNDLE_IDENTIFIER: com.routemaster.app
+        INFOPLIST_FILE: Resources/App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Resources/App/App.entitlements
+        ENABLE_APP_SANDBOX: NO
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
+    # Place the daemon binary + launchd plist at the exact SMAppService paths.
+    postCompileScripts:
+      - name: "Embed privileged helper (SMAppService layout)"
+        basedOnDependencyAnalysis: false
+        script: |
+          set -euo pipefail
+          APP_CONTENTS="${BUILT_PRODUCTS_DIR}/${CONTENTS_FOLDER_PATH}"
+          HELPER_SRC="${BUILT_PRODUCTS_DIR}/RouteMasterHelper"
+          PLIST_SRC="${SRCROOT}/Resources/Helper/com.routemaster.helper.plist"
+
+          # 1) daemon binary -> Contents/MacOS/RouteMasterHelper
+          mkdir -p "${APP_CONTENTS}/MacOS"
+          /bin/cp -f "${HELPER_SRC}" "${APP_CONTENTS}/MacOS/RouteMasterHelper"
+
+          # 2) launchd plist -> Contents/Library/LaunchDaemons/com.routemaster.helper.plist
+          mkdir -p "${APP_CONTENTS}/Library/LaunchDaemons"
+          /bin/cp -f "${PLIST_SRC}" \
+            "${APP_CONTENTS}/Library/LaunchDaemons/com.routemaster.helper.plist"
+
+          echo "Embedded RouteMasterHelper + launchd plist into ${APP_CONTENTS}"
+
+schemes:
+  RouteMaster:
+    build:
+      targets:
+        RouteMasterHelper: all
+        RouteMaster: all
+      # Ensure the daemon is built before the app's embed phase runs.
+      buildImplicitDependencies: true
+    run:
+      config: Debug
+    archive:
+      config: Release

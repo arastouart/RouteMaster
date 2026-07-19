@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  launchd property list for the RouteMaster privileged daemon.
+
+  This file is embedded into the app bundle at:
+    RouteMaster.app/Contents/Library/LaunchDaemons/com.routemaster.helper.plist
+  and registered via SMAppService.daemon(plistName: "com.routemaster.helper.plist").
+
+  BundleProgram is resolved RELATIVE to the app bundle's Contents/ directory,
+  so it points at the embedded daemon binary in Contents/MacOS.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.routemaster.helper</string>
+
+    <!-- Path (relative to the app bundle Contents/) to the embedded daemon binary. -->
+    <key>BundleProgram</key>
+    <string>Contents/MacOS/RouteMasterHelper</string>
+
+    <!-- The Mach service the app connects to over XPC. -->
+    <key>MachServices</key>
+    <dict>
+        <key>com.routemaster.helper.xpc</key>
+        <true/>
+    </dict>
+
+    <!-- Ties this daemon to the owning app for SMAppService management. -->
+    <key>AssociatedBundleIdentifiers</key>
+    <array>
+        <string>com.routemaster.app</string>
+    </array>
+
+    <!-- launchd starts the daemon on demand when the Mach service is looked up. -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <!-- Route daemon stdout/stderr somewhere inspectable during dev. -->
+    <key>StandardOutPath</key>
+    <string>/Library/Logs/RouteMaster/helper.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Library/Logs/RouteMaster/helper.err.log</string>
+
+    <key>ProcessType</key>
+    <string>Interactive</string>
+</dict>
+</plist>

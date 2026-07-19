@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Info.plist embedded into the daemon binary (CREATE_INFOPLIST_SECTION_IN_BINARY).
+  A command-line tool has no bundle, so this is baked into the __TEXT,__info_plist
+  section. It carries the identifier + signing-mode used to validate XPC peers.
+-->
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.routemaster.helper</string>
+    <key>CFBundleName</key>
+    <string>RouteMasterHelper</string>
+    <key>CFBundleVersion</key>
+    <string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(MARKETING_VERSION)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+
+    <!-- Mirror of the app's signing-mode selector. build.sh flips this to RELEASE. -->
+    <key>RM_SIGNING_MODE</key>
+    <string>LOCAL_DEV</string>
+
+    <!-- Associates the daemon with the owning app for SMAppService. -->
+    <key>SMAuthorizedClients</key>
+    <array>
+        <string>com.routemaster.app</string>
+    </array>
+</dict>
+</plist>

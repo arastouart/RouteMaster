@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>RouteMaster</string>
+    <key>CFBundleDisplayName</key>
+    <string>RouteMaster</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(MARKETING_VERSION)</string>
+    <key>CFBundleVersion</key>
+    <string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+
+    <!--
+      LSUIElement = false: RouteMaster is a normal window app that ALSO owns a
+      MenuBarExtra. (A MenuBarExtra works from a regular app; setting LSUIElement
+      true would hide the Dock icon / main window, which we do not want here.)
+    -->
+    <key>LSUIElement</key>
+    <false/>
+
+    <key>NSHighResolutionCapable</key>
+    <true/>
+
+    <!--
+      RM_SIGNING_MODE selects which XPC code-signing requirement string is active
+      at runtime: "LOCAL_DEV" (self-signed) or "RELEASE" (Developer ID + <TEAM_ID>).
+      build.sh rewrites this to RELEASE when DEV_TEAM is set.
+    -->
+    <key>RM_SIGNING_MODE</key>
+    <string>LOCAL_DEV</string>
+
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <!-- Geo-Lock queries plain-HTTP-capable IP APIs; allow arbitrary loads. -->
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
+</dict>
+</plist>

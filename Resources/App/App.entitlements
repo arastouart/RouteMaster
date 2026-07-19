@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  App entitlements.
+
+  The app is NON-SANDBOXED: a privileged SMAppService daemon + direct (non-MAS)
+  distribution requires it. We deliberately do NOT declare
+  com.apple.security.app-sandbox. Shared config lives in a root-owned file owned
+  by the daemon (see ConfigStore), so no application-groups entitlement is needed.
+
+  Hardened Runtime is enabled via build settings; these exceptions keep XPC and
+  the network-facing Geo-Lock / DNS features working under it.
+-->
+<plist version="1.0">
+<dict>
+    <!-- Allow outbound network for Geo-Lock IP checks (client side). -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+</dict>
+</plist>
