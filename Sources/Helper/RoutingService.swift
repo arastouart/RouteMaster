@@ -44,6 +44,10 @@ final class RoutingService: NSObject, RoutingProtocol {
         reply(try? JSONEncoder.routeMaster.encode(net))
     }
 
+    func getConfig(withReply reply: @escaping (Data?) -> Void) {
+        reply(try? JSONEncoder.routeMaster.encode(configStore.snapshot()))
+    }
+
     func applyConfig(_ data: Data, withReply reply: @escaping (Bool, String?) -> Void) {
         do {
             let config = try JSONDecoder.routeMaster.decode(AppConfig.self, from: data)

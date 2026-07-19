@@ -16,6 +16,10 @@ import Foundation
     /// Current network vantage points. Reply is JSON-encoded `NetworkStateDTO` (or nil).
     func getNetworkState(withReply reply: @escaping (Data?) -> Void)
 
+    /// The daemon's current persisted configuration. Reply is JSON-encoded `AppConfig`
+    /// (or nil). The app uses this to populate its editable UI from the source of truth.
+    func getConfig(withReply reply: @escaping (Data?) -> Void)
+
     /// Persist + apply a new configuration. `data` is a JSON-encoded `AppConfig`.
     /// Reply: (ok, errorMessage?).
     func applyConfig(_ data: Data, withReply reply: @escaping (Bool, String?) -> Void)
