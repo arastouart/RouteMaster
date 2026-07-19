@@ -135,6 +135,7 @@ targets:
       - path: Sources/Helper/ShellRunner.swift
       - path: Sources/Helper/RouteManager.swift
       - path: Sources/Helper/DNSResolver.swift
+      - path: Sources/Helper/GeoDebouncer.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.routemaster.tests
