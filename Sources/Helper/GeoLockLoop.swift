@@ -160,15 +160,58 @@ final class GeoLockLoop {
 
     private struct GeoResult { let country: String; let ip: String? }
 
-    /// Query the external IP + country. Primary: ip-api.com, fallback: ipinfo.io.
-    /// Uses the system default route on purpose (that is the VPN exit). Timeout + one
-    /// backoff retry per endpoint.
+    /// Query the external IP + country. Uses the system default route on purpose (that
+    /// is the VPN exit). Timeout + one backoff retry.
+    ///
+    /// Behavior:
+    ///   * If an OPTIONAL provider + API key are configured, query that paid endpoint
+    ///     first (ipinfo `?token=`, or ip-api pro `?key=`).
+    ///   * Otherwise — or if the keyed lookup fails — fall back to the EXACT legacy
+    ///     free chain: ip-api.com then ipinfo.io, no key. This keeps existing configs
+    ///     100% backward-compatible.
     private func fetchExternalGeo() -> GeoResult? {
+        let config = configStore.snapshot()
+        let provider = config.geoProvider?
+            .trimmingCharacters(in: .whitespaces).lowercased() ?? ""
+        let key = config.geoAPIKey?.trimmingCharacters(in: .whitespaces) ?? ""
+
+        // Keyed path (only when BOTH a provider and a non-empty key are present).
+        if !key.isEmpty, !provider.isEmpty {
+            if let r = fetchWithKey(provider: provider, key: key) { return r }
+            // Keyed lookup failed — degrade gracefully to the free default chain below.
+        }
+
+        return fetchDefaultChain()
+    }
+
+    /// The unchanged legacy free chain: ip-api.com (primary) then ipinfo.io (fallback).
+    private func fetchDefaultChain() -> GeoResult? {
         if let r = fetchGeo(from: "http://ip-api.com/json/", countryKey: "countryCode",
                             ipKey: "query") { return r }
         // Backoff before trying the fallback.
         Thread.sleep(forTimeInterval: 0.5)
         return fetchGeo(from: "https://ipinfo.io/json", countryKey: "country", ipKey: "ip")
+    }
+
+    /// Query the selected provider using the user's API key.
+    private func fetchWithKey(provider: String, key: String) -> GeoResult? {
+        // Percent-encode the key so it is safe as a query-string VALUE. Start from the
+        // query-allowed set but remove sub-delimiters that would corrupt the value.
+        var allowed = CharacterSet.urlQueryAllowed
+        allowed.remove(charactersIn: "&=?+/ ")
+        let encoded = key.addingPercentEncoding(withAllowedCharacters: allowed) ?? key
+        switch provider {
+        case "ipinfo":
+            return fetchGeo(from: "https://ipinfo.io/json?token=\(encoded)",
+                            countryKey: "country", ipKey: "ip")
+        case "ip-api":
+            // ip-api's paid/pro tier is served over the pro host with a key parameter.
+            return fetchGeo(from: "https://pro.ip-api.com/json/?key=\(encoded)",
+                            countryKey: "countryCode", ipKey: "query")
+        default:
+            // Unknown provider string — ignore the key and use the free chain.
+            return nil
+        }
     }
 
     private func fetchGeo(from urlString: String, countryKey: String, ipKey: String) -> GeoResult? {

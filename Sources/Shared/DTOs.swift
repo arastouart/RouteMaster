@@ -50,13 +50,26 @@ public struct AppConfig: Codable, Hashable, Sendable {
     /// (debounce against flapping).
     public var geoDebounceCount: Int
 
+    /// OPTIONAL geo provider selection for the Geo-Lock external-country lookup.
+    /// Values: `"ip-api"`, `"ipinfo"`. `nil`/empty => the default fallback chain
+    /// (ip-api.com then ipinfo.io, no key) — identical to legacy behavior.
+    /// Optional so existing `config.json` files without this key still decode cleanly
+    /// (synthesized `Codable` uses `decodeIfPresent` -> nil for absent optionals).
+    public var geoProvider: String?
+
+    /// OPTIONAL API key for the selected paid geo provider. `nil`/empty => no key
+    /// (free endpoints). Stored locally in config.json only; never seeded, never committed.
+    public var geoAPIKey: String?
+
     public init(
         splitDomains: [RoutedDomain],
         geoLockRules: [GeoLockRule],
         resolveIntervalSeconds: Int = 300,
         geoCheckIntervalSeconds: Int = 30,
         dryRun: Bool = true,
-        geoDebounceCount: Int = 3
+        geoDebounceCount: Int = 3,
+        geoProvider: String? = nil,
+        geoAPIKey: String? = nil
     ) {
         self.splitDomains = splitDomains
         self.geoLockRules = geoLockRules
@@ -64,6 +77,8 @@ public struct AppConfig: Codable, Hashable, Sendable {
         self.geoCheckIntervalSeconds = geoCheckIntervalSeconds
         self.dryRun = dryRun
         self.geoDebounceCount = geoDebounceCount
+        self.geoProvider = geoProvider
+        self.geoAPIKey = geoAPIKey
     }
 
     /// Seed configuration written on first launch.

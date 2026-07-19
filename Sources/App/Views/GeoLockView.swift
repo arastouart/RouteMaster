@@ -22,9 +22,58 @@ struct GeoLockView: View {
                 ForEach(vm.config.geoLockRules) { rule in
                     ruleCard(rule)
                 }
+
+                advancedProviderCard
             }
             .padding(24)
         }
+    }
+
+    // MARK: - Optional Advanced / Provider
+
+    /// Binding that maps an Optional<String> config field to a non-optional String for
+    /// the controls (empty string <-> nil).
+    private func optionalBinding(_ keyPath: WritableKeyPath<AppConfig, String?>) -> Binding<String> {
+        Binding(
+            get: { vm.config[keyPath: keyPath] ?? "" },
+            set: { newValue in
+                let trimmed = newValue.trimmingCharacters(in: .whitespaces)
+                vm.config[keyPath: keyPath] = trimmed.isEmpty ? nil : newValue
+            }
+        )
+    }
+
+    private var advancedProviderCard: some View {
+        DisclosureGroup {
+            VStack(alignment: .leading, spacing: 12) {
+                Picker("Provider", selection: optionalBinding(\.geoProvider)) {
+                    Text("Default (free: ip-api → ipinfo)").tag("")
+                    Text("ip-api").tag("ip-api")
+                    Text("ipinfo").tag("ipinfo")
+                }
+                .pickerStyle(.menu)
+
+                SecureField("Optional — leave empty to use the free service",
+                            text: optionalBinding(\.geoAPIKey))
+                    .textFieldStyle(.roundedBorder)
+
+                Text("The API key is stored locally in the daemon's config.json and is "
+                     + "optional. Leave it empty to keep the default free lookup. Never "
+                     + "commit your key to git.")
+                    .font(.caption).foregroundStyle(.secondary)
+
+                HStack {
+                    Spacer()
+                    Button("Apply") { Task { await vm.saveConfig() } }
+                        .buttonStyle(NeonButtonStyle(tint: Neon.purple))
+                }
+            }
+            .padding(.top, 8)
+        } label: {
+            Label("Advanced / Provider", systemImage: "slider.horizontal.3")
+                .font(.headline)
+        }
+        .glassCard(glow: Neon.purple)
     }
 
     private var currentLocationCard: some View {

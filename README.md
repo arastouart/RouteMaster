@@ -31,6 +31,18 @@ daemon, distributed as **source** (direct download, not the Mac App Store).
   Logs screens, plus a **menu bar** item showing engine state, VPN location, and
   Geo-Lock status.
 
+### Optional geo-provider API key
+
+By default, Geo-Lock uses free public endpoints (ip-api.com → ipinfo.io, **no key**).
+If you have a paid account, open **Geo-Lock → Advanced / Provider** in the app and pick a
+provider (`ip-api` or `ipinfo`) and enter your **own** API key:
+
+- The key is stored **locally**, in the daemon's `/Library/Application Support/RouteMaster/
+  config.json` (root-owned). It is **optional** — leave it empty to keep the free lookup.
+- **Never commit your API key to git.** RouteMaster never seeds or hardcodes a key; the
+  default/seed config keeps both `geoProvider` and `geoAPIKey` empty. `config.json` lives
+  under `/Library`, not in this repo, so it is not tracked here — keep it that way.
+
 ---
 
 ## Architecture
