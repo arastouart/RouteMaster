@@ -1,0 +1,27 @@
+# Xcode / build products
+build/
+DerivedData/
+*.xcodeproj/
+*.xcworkspace/
+*.xcuserstate
+*.xcscmblueprint
+
+# XcodeGen generates the project — never commit it
+RouteMaster.xcodeproj/
+
+# macOS
+.DS_Store
+
+# Signing scratch / backups
+*.entitlements.bak
+*.p12
+*.cer
+*.mobileprovision
+
+# Swift Package Manager (if ever used)
+.build/
+Packages/
+Package.resolved
+
+# Misc
+*.log

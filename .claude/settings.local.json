@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($env:OS; [System.Environment]::OSVersion.VersionString; \\(Get-Command xcodebuild -ErrorAction SilentlyContinue\\); \\(Get-Command brew -ErrorAction SilentlyContinue\\); \\(Get-Command xcodegen -ErrorAction SilentlyContinue\\); \\(Get-Command swift -ErrorAction SilentlyContinue\\); \"PWD: $\\(Get-Location\\)\")"
+    ]
+  }
+}
