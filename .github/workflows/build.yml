@@ -20,11 +20,36 @@ jobs:
           xcodebuild -version
           uname -m
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      # Pin XcodeGen to a fixed release so CI does not silently pull a newer version
+      # that defaults to a future pbxproj format. (project.yml also pins objectVersion:56,
+      # so the format is correct even if this step changes — belt and suspenders.)
+      - name: Install XcodeGen (pinned)
+        env:
+          XCODEGEN_VERSION: "2.42.0"
+        run: |
+          set -euo pipefail
+          curl -fsSL -o xcodegen.zip \
+            "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip"
+          unzip -q xcodegen.zip -d xcodegen-dist
+          # Locate bin/xcodegen wherever the portable zip placed it; its resources live in
+          # the sibling ../share/xcodegen, so adding this bin dir to PATH is sufficient.
+          XG_BIN="$(find "${PWD}/xcodegen-dist" -type f -name xcodegen -path '*/bin/*' | head -n1)"
+          test -n "${XG_BIN}"
+          chmod +x "${XG_BIN}"
+          echo "$(dirname "${XG_BIN}")" >> "${GITHUB_PATH}"
+
+      - name: Verify XcodeGen version
+        run: xcodegen --version
 
       - name: Generate Xcode project
         run: xcodegen generate
+
+      - name: Assert Xcode 15-compatible project format (objectVersion 56)
+        run: |
+          set -euo pipefail
+          OBJV=$(grep -m1 'objectVersion' RouteMaster.xcodeproj/project.pbxproj | grep -oE '[0-9]+')
+          echo "objectVersion=${OBJV}"
+          test "${OBJV}" = "56"
 
       - name: List targets
         run: xcodebuild -list -project RouteMaster.xcodeproj

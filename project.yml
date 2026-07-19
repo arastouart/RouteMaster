@@ -24,6 +24,11 @@ options:
     macOS: "13.0"
   createIntermediateGroups: true
   groupSortPosition: top
+  # Pin the generated .xcodeproj to the classic pbxproj format (objectVersion 56 =
+  # Xcode 15). Newer XcodeGen defaults to objectVersion 77 (Xcode 16's future format),
+  # which Xcode 15.4 / xcodebuild on the CI runner cannot open. This forces a
+  # compatible project regardless of the installed XcodeGen version.
+  objectVersion: 56
 
 settings:
   base:
