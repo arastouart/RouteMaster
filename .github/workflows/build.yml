@@ -44,12 +44,20 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Assert Xcode 15-compatible project format (objectVersion 56)
+      - name: Assert Xcode 15-compatible project format (objectVersion <= 56)
         run: |
           set -euo pipefail
           OBJV=$(grep -m1 'objectVersion' RouteMaster.xcodeproj/project.pbxproj | grep -oE '[0-9]+')
           echo "objectVersion=${OBJV}"
-          test "${OBJV}" = "56"
+          # Xcode 15.4 opens the classic formats (54/55/56, and older). It only chokes
+          # on the future format (e.g. 77). Anything <= 56 is fine; lower is MORE
+          # compatible, not less. Fail only on newer-than-56 formats.
+          if [ "${OBJV}" -le 56 ]; then
+            echo "OK: objectVersion ${OBJV} is Xcode 15.4-compatible."
+          else
+            echo "ERROR: objectVersion ${OBJV} is a future format Xcode 15.4 cannot open." >&2
+            exit 1
+          fi
 
       - name: List targets
         run: xcodebuild -list -project RouteMaster.xcodeproj
