@@ -120,6 +120,27 @@ targets:
 
           echo "Embedded RouteMasterHelper + launchd plist into ${APP_CONTENTS}"
 
+  # -------------------------------------------------------------------------
+  # Logic tests for the pure parsing / packet code (no live network / routing).
+  # Compiles the relevant Helper + Shared sources directly into the test module so
+  # `internal` members are visible without a testable host app.
+  # -------------------------------------------------------------------------
+  RouteMasterTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests
+      - path: Sources/Shared
+      - path: Sources/Helper/NetworkInspector.swift
+      - path: Sources/Helper/ShellRunner.swift
+      - path: Sources/Helper/RouteManager.swift
+      - path: Sources/Helper/DNSResolver.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.routemaster.tests
+        # Pure logic tests — no host app needed.
+        GENERATE_INFOPLIST_FILE: YES
+
 schemes:
   RouteMaster:
     build:
@@ -130,5 +151,8 @@ schemes:
       buildImplicitDependencies: true
     run:
       config: Debug
+    test:
+      targets:
+        - RouteMasterTests
     archive:
       config: Release

@@ -60,6 +60,20 @@ public enum HelperConstants {
         SigningMode(rawValue: infoValue ?? "") ?? .localDev
     }
 
+    /// The signing mode compiled into this binary. Selected by the `RELEASE_SIGNING`
+    /// Swift compilation condition, which `build.sh` adds only when `DEV_TEAM` is set.
+    /// Both the app and daemon compile `Sources/Shared`, so they always agree.
+    ///
+    /// This compile-flag approach is deterministic and avoids reading the embedded
+    /// `__info_plist` section of a command-line tool at runtime (which is unreliable).
+    public static var activeSigningMode: SigningMode {
+        #if RELEASE_SIGNING
+        return .release
+        #else
+        return .localDev
+        #endif
+    }
+
     // MARK: - Requirement strings
 
     /// Code-signing requirement the DAEMON pins on the connecting APP.
