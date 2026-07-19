@@ -43,11 +43,11 @@ final class HelperInstaller: ObservableObject {
             try service.register()
             refreshState()
         } catch {
-            // A "requires approval" situation often surfaces as an error the first time.
-            let ns = error as NSError
-            if ns.code == kSMErrorAlreadyRegistered {
-                refreshState()
-            } else {
+            // First-time registration commonly throws until the user approves the daemon
+            // in Login Items. Re-read the authoritative status; if it is still not
+            // enabled, treat it as "requires approval" and let the UI guide the user.
+            refreshState()
+            if state != .enabled {
                 state = .requiresApproval
             }
         }

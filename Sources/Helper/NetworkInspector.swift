@@ -1,4 +1,5 @@
 import Foundation
+import Darwin   // if_nametoindex
 
 /// Detects the host's routing vantage points:
 ///   * the current default route (gateway + interface) and whether it egresses a VPN

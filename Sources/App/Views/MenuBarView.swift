@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit   // NSApplication.terminate
 
 /// MenuBarExtra content: quick Start/Stop, VPN location/country, Geo-Lock summary.
 struct MenuBarView: View {
