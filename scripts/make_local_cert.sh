@@ -48,12 +48,29 @@ openssl req -x509 -newkey rsa:2048 -nodes \
   -config "${WORKDIR}/cert.cnf" >/dev/null 2>&1
 
 # Bundle into a PKCS#12 for import (empty password).
-openssl pkcs12 -export \
-  -inkey "${WORKDIR}/key.pem" \
-  -in    "${WORKDIR}/cert.pem" \
-  -name  "${CERT_CN}" \
-  -out   "${WORKDIR}/cert.p12" \
-  -passout pass: >/dev/null 2>&1
+#
+# macOS `security import` / SecKeychainItemImport only understands the LEGACY PKCS#12
+# format. Modern OpenSSL (e.g. Homebrew's OpenSSL 3.x) defaults to a SHA-256 MAC and
+# newer PBE algorithms, which macOS misreads as "MAC verification failed (wrong
+# password?)". Emit the legacy MAC + PBE so the .p12 imports cleanly.
+p12_export() {
+  openssl pkcs12 -export \
+    -inkey "${WORKDIR}/key.pem" \
+    -in    "${WORKDIR}/cert.pem" \
+    -name  "${CERT_CN}" \
+    -out   "${WORKDIR}/cert.p12" \
+    -passout pass: "$@"
+}
+
+# Preferred: force legacy algorithms explicitly (works on OpenSSL 1.1 and 3.x).
+if ! p12_export -macalg sha1 -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES >/dev/null 2>&1; then
+  echo "    (legacy PBE flags unsupported; retrying with -legacy provider)"
+  # OpenSSL 3.x fallback: -legacy switches to the old provider defaults macOS accepts.
+  if ! p12_export -legacy >/dev/null 2>&1; then
+    echo "    (-legacy unsupported; falling back to default export)"
+    p12_export >/dev/null 2>&1
+  fi
+fi
 
 # Import key + cert into the login keychain, allowing codesign to use it non-interactively.
 CODESIGN_BIN="$(command -v codesign || echo /usr/bin/codesign)"
