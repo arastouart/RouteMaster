@@ -28,5 +28,12 @@
     <array>
         <string>com.routemaster.app</string>
     </array>
+
+    <!-- Geo-Lock queries plain-HTTP ip-api.com; allow it (daemon is non-sandboxed). -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
 </dict>
 </plist>

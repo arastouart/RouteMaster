@@ -1,0 +1,60 @@
+name: build
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+
+jobs:
+  build:
+    name: Compile + logic tests (LOCAL_DEV, unsigned)
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          uname -m
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: List targets
+        run: xcodebuild -list -project RouteMaster.xcodeproj
+
+      # Prove BOTH targets compile and the helper embeds. Signing is disabled here
+      # (CI has no keychain identity); real builds sign via scripts/build.sh.
+      - name: Build (Release, code signing disabled)
+        run: |
+          xcodebuild \
+            -project RouteMaster.xcodeproj \
+            -scheme RouteMaster \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Verify embedded helper layout
+        run: |
+          APP="build/Build/Products/Release/RouteMaster.app"
+          test -f "$APP/Contents/MacOS/RouteMasterHelper"
+          test -f "$APP/Contents/Library/LaunchDaemons/com.routemaster.helper.plist"
+          echo "Embedded helper + launchd plist present."
+
+      - name: Run logic tests
+        run: |
+          xcodebuild \
+            -project RouteMaster.xcodeproj \
+            -scheme RouteMaster \
+            -destination 'platform=macOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            test
